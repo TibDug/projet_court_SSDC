@@ -15,6 +15,15 @@ def get_argument(arguments):
         sys.exit("Error: {} is not a .pdb file.".format(arguments[1]))
     return arguments[1], arguments[2], int(arguments[3])
 
+def calcul_centre_masse(coord_carbones_alphas_dict):
+	xmean, ymean, zmean = 0, 0, 0
+	for CA in coord_carbones_alphas_dict :
+		xmean += coord_carbones_alphas_dict[CA][1]
+		ymean += coord_carbones_alphas_dict[CA][2]
+		zmean += coord_carbones_alphas_dict[CA][3]
+	mass_center = [xmean/len(coord_carbones_alphas_dict), ymean/len(coord_carbones_alphas_dict), zmean/len(coord_carbones_alphas_dict)]
+	return(mass_center)
+
 if __name__ == "__main__":
     # Recuperation et traitement des donnees en entree.
     # Recuperation des arguments en entree.
