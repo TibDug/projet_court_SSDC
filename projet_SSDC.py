@@ -1,3 +1,5 @@
+# python3 projet_SSDC.py 1t5n.pdb output.txt 3
+
 import sys
 import os
 import argparse
@@ -7,8 +9,10 @@ __contact__ = ("lara.herrma@gmail.com & thibault.dug@gmail.com")
 __date__ = "09 / 09 / 2020"
 
 
-hydrophobe_list = ["LYS","ARG","HIS","GLU","A","V","I","L","M","F","Y","W"]
-hydrophile_list = ["P","S","N","Q","D","E","R","K"]
+#alanine, isoleucine, leucine, méthionine, phénylalanine, tryptophane, valine, tyrosine
+hydrophobe_list = ["ALA", "ILE", "LEU", "MET", "PHE", "TRP", "VAL", "TYR", "CYS"]
+#lysine, arginine, histidine, acide glutamique, acide aspartique, sérine, thréonine, asparagine, glutamine
+hydrophile_list = ["LYS", "ARG", "HIS", "GLU", "ASP", "SER", "THR", "ASN", "GLN"]
 
 def get_argument(arguments):
     if len(arguments) != 4:  # Verifie le nombre d'arguments en ligne de commande
@@ -19,15 +23,6 @@ def get_argument(arguments):
         sys.exit("Error: {} is not a .pdb file.".format(arguments[1]))
     return arguments[1], arguments[2], int(arguments[3])
 
-def calcul_centre_masse(coord_carbones_alphas_dict):
-	xmean, ymean, zmean = 0, 0, 0
-	for CA in coord_carbones_alphas_dict :
-		xmean += coord_carbones_alphas_dict[CA][1]
-		ymean += coord_carbones_alphas_dict[CA][2]
-		zmean += coord_carbones_alphas_dict[CA][3]
-	mass_center = [xmean/len(coord_carbones_alphas_dict), ymean/len(coord_carbones_alphas_dict), zmean/len(coord_carbones_alphas_dict)]
-	return(mass_center)
-	
 def carbones_alphas_infos(PDB_file):
     coord_carbones_alphas_dict = {}
     type_dict = {}
@@ -35,17 +30,33 @@ def carbones_alphas_infos(PDB_file):
         id_CA = 0
         for ligne in fichier_proteine:
             liste_calpha = []
-            if ligne[12:16].strip() == 'CA':
-                coord_carbones_alphas_dict[id_CA] = (ligne[31:38].strip(), ligne[39:46].strip(), ligne[47:54].strip())
-                if ligne[77:78].strip() in hydrophobe_list:
+            if ligne[0:6].strip() == 'ATOM' and ligne[12:16].strip() == 'CA':
+                id_CA += 1
+                coord_carbones_alphas_dict[id_CA] = (float(ligne[30:38].strip()), float(ligne[38:46].strip()), float(ligne[46:54].strip()))
+                if ligne[17:20].strip() in hydrophobe_list:
                     type_dict[id_CA] = 0
-                elif ligne[77:78].strip() in hydrophile_list:
+                elif ligne[17:20].strip() in hydrophile_list:
                     type_dict[id_CA] = 1
                 else:
                     type_dict[id_CA] = -1
     return coord_carbones_alphas_dict, type_dict
 
+def calcul_centre_masse(coord_carbones_alphas_dict):
+    xmean, ymean, zmean = 0, 0, 0
+    for CA in coord_carbones_alphas_dict :
+        xmean += coord_carbones_alphas_dict[CA][0]
+        ymean += coord_carbones_alphas_dict[CA][1]
+        zmean += coord_carbones_alphas_dict[CA][2]
+    mass_center = [xmean/len(coord_carbones_alphas_dict), ymean/len(coord_carbones_alphas_dict), zmean/len(coord_carbones_alphas_dict)]
+    return(mass_center)
+    
+def CA_externes(dict_
+
 if __name__ == "__main__":
     # Recuperation et traitement des donnees en entree.
     # Recuperation des arguments en entree.
-    input_file, output_file, points_number = get_argument(sys.argv)
+    PDB_file, output_file, points_number = get_argument(sys.argv)
+    coord_carbones_alphas_dict, type_dict = carbones_alphas_infos(PDB_file)
+    print(type_dict.values())
+    mass_center = calcul_centre_masse(coord_carbones_alphas_dict)
+    print(mass_center)
