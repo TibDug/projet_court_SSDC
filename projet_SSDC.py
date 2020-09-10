@@ -68,6 +68,7 @@ def accessible_surface_area(PDB_file):
 
 
 def fibonacci_sphere(samples, mass_center):
+<<<<<<< HEAD
     points = []
     phi = math.pi * (3. - math.sqrt(5.))  # golden angle in radians
     for i in range(samples):
@@ -78,6 +79,24 @@ def fibonacci_sphere(samples, mass_center):
         x = (math.cos(theta) * radius) + mass_center[0]
         z = (math.sin(theta) * radius) + mass_center[2]
         points.append((x, y, z))
+=======
+
+    points = []
+    phi = math.pi * (3. - math.sqrt(5.))  # golden angle in radians
+
+    for i in range(samples):
+        y = (1 - (i / float(samples - 1)) * 2) # y goes from 1 to -1
+        radius = math.sqrt(1 - y * y)  # radius at y
+
+        theta = phi * i  # golden angle increment
+        
+        y = y + mass_center[1]
+        x = (math.cos(theta) * radius) + mass_center[0]
+        z = (math.sin(theta) * radius) + mass_center[2]
+
+        points.append((x, y, z))
+
+>>>>>>> a43c394c5449f6d7f5aab07e0590bdf7330faca1
     return points
       
 def affichage_points(points):
@@ -96,15 +115,32 @@ if __name__ == "__main__":
     print(mass_center)
     accessible_surface_area(PDB_file)
     points = fibonacci_sphere(points_number, mass_center)
+<<<<<<< HEAD
     
     x = []
     y = []
     z = []
+=======
+    print(mass_center)
+    print(points)
+    
+    x = [mass_center[0]]
+    y = [mass_center[1]]
+    z = [mass_center[2]]
+>>>>>>> a43c394c5449f6d7f5aab07e0590bdf7330faca1
     for point in points:
         x.append(point[0])
         y.append(point[1])
         z.append(point[2])
     # Creating figure 
     fig = plt.figure(figsize = (10, 7)) 
+<<<<<<< HEAD
     ax = plt.axes(projection ="3d") 
     affichage_points(points)
+=======
+    ax = plt.axes(projection ="3d")     
+    # Creating plot 
+    ax.scatter3D(x, y, z, color = "green"); 
+    plt.title("simple 3D scatter plot")
+    plt.show()
+>>>>>>> a43c394c5449f6d7f5aab07e0590bdf7330faca1
