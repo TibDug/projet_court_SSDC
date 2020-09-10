@@ -1,15 +1,18 @@
+#ligne de commande : python3 projet_SSDC.py 1t5n.pdb output.txt 3
+
 import sys
 import os
 import argparse
+from Bio.PDB import PDBParser
+from Bio.PDB.DSSP import DSSP
 
 __authors__ = ("Lara HERRMANN & Thibault DUGAUQUIER")
 __contact__ = ("lara.herrma@gmail.com & thibault.dug@gmail.com")
 __date__ = "09 / 09 / 2020"
 
-#alanine, isoleucine, leucine, méthionine, phénylalanine, tryptophane, valine, tyrosine
-hydrophobe_list = ["ALA", "ILE", "LEU", "MET", "PHE", "TRP", "VAL", "TYR", "CYS"]
-#lysine, arginine, histidine, acide glutamique, acide aspartique, sérine, thréonine, asparagine, glutamine
-hydrophile_list = ["LYS", "ARG", "HIS", "GLU", "ASP", "SER", "THR", "ASN", "GLN"]
+hydrophobe_list = ["PHE", "GlY", "ILE", "LEU", "MET", "VAL", "TRP", "TYR"]
+hydrophile_list = ["ALA", "CYS", "ASP", "GLU", "HIS", "LYS", "ASN", "PRO", "GLN", "ARG", "SER","THR"
+]
 
 def get_argument(arguments):
     if len(arguments) != 4:  # Verifie le nombre d'arguments en ligne de commande
@@ -47,6 +50,15 @@ def calcul_centre_masse(coord_carbones_alphas_dict):
     mass_center = [xmean/len(coord_carbones_alphas_dict), ymean/len(coord_carbones_alphas_dict), zmean/len(coord_carbones_alphas_dict)]
     return(mass_center)
 
+def accessible_surface_area(PDB_file):
+    parser = PDBParser()
+    structure_id = PDB_file.split(".")[0]
+    structure = parser.get_structure(structure_id, PDB_file)
+    model = structure[0]
+    dssp = DSSP(model, PDB_file, dssp='mkdssp')
+    for CA in list(dssp.keys()):
+      print(dssp[CA][1])
+
 if __name__ == "__main__":
     # Recuperation et traitement des donnees en entree.
     # Recuperation des arguments en entree.
@@ -55,3 +67,4 @@ if __name__ == "__main__":
     print(type_dict.values())
     mass_center = calcul_centre_masse(coord_carbones_alphas_dict)
     print(mass_center)
+    accessible_surface_area(PDB_file)
