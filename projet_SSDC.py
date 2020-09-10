@@ -1,13 +1,14 @@
-# python3 projet_SSDC.py 1t5n.pdb output.txt 3
+#ligne de commande : python3 projet_SSDC.py 1t5n.pdb output.txt 3
 
 import sys
 import os
 import argparse
+from Bio.PDB import PDBParser
+from Bio.PDB.DSSP import DSSP
 
 __authors__ = ("Lara HERRMANN & Thibault DUGAUQUIER")
 __contact__ = ("lara.herrma@gmail.com & thibault.dug@gmail.com")
 __date__ = "09 / 09 / 2020"
-
 
 #alanine, isoleucine, leucine, méthionine, phénylalanine, tryptophane, valine, tyrosine
 hydrophobe_list = ["ALA", "ILE", "LEU", "MET", "PHE", "TRP", "VAL", "TYR", "CYS"]
@@ -31,7 +32,6 @@ def carbones_alphas_infos(PDB_file):
         for ligne in fichier_proteine:
             liste_calpha = []
             if ligne[0:6].strip() == 'ATOM' and ligne[12:16].strip() == 'CA':
-                id_CA += 1
                 coord_carbones_alphas_dict[id_CA] = (float(ligne[30:38].strip()), float(ligne[38:46].strip()), float(ligne[46:54].strip()))
                 if ligne[17:20].strip() in hydrophobe_list:
                     type_dict[id_CA] = 0
@@ -39,6 +39,7 @@ def carbones_alphas_infos(PDB_file):
                     type_dict[id_CA] = 1
                 else:
                     type_dict[id_CA] = -1
+                id_CA += 1
     return coord_carbones_alphas_dict, type_dict
 
 def calcul_centre_masse(coord_carbones_alphas_dict):
@@ -49,8 +50,21 @@ def calcul_centre_masse(coord_carbones_alphas_dict):
         zmean += coord_carbones_alphas_dict[CA][2]
     mass_center = [xmean/len(coord_carbones_alphas_dict), ymean/len(coord_carbones_alphas_dict), zmean/len(coord_carbones_alphas_dict)]
     return(mass_center)
-    
-def CA_externes(dict_
+
+def accessible_surface_area(PDB_file):
+    ASA_dict = {}
+    parser = PDBParser()
+    structure_id = PDB_file.split(".")[0]
+    structure = parser.get_structure(structure_id, PDB_file)
+    model = structure[0]
+    dssp = DSSP(model, PDB_file, dssp='mkdssp')
+    id_CA = 0
+    for CA in list(dssp.keys()):
+        if dssp[CA][1] != 'X':
+            ASA_dict[id_CA] = dssp[CA][3]
+            id_CA += 1
+    return ASA_dict
+      
 
 if __name__ == "__main__":
     # Recuperation et traitement des donnees en entree.
@@ -60,3 +74,4 @@ if __name__ == "__main__":
     print(type_dict.values())
     mass_center = calcul_centre_masse(coord_carbones_alphas_dict)
     print(mass_center)
+    accessible_surface_area(PDB_file)
