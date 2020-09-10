@@ -3,6 +3,9 @@
 import sys
 import os
 import argparse
+import math
+import matplotlib.pyplot as plt
+from mpl_toolkits import mplot3d
 from Bio.PDB import PDBParser
 from Bio.PDB.DSSP import DSSP
 
@@ -46,7 +49,7 @@ def calcul_centre_masse(coord_carbones_alphas_dict):
         xmean += coord_carbones_alphas_dict[CA][0]
         ymean += coord_carbones_alphas_dict[CA][1]
         zmean += coord_carbones_alphas_dict[CA][2]
-    mass_center = [xmean/len(coord_carbones_alphas_dict), ymean/len(coord_carbones_alphas_dict), zmean/len(coord_carbones_alphas_dict)]
+    mass_center = (xmean/len(coord_carbones_alphas_dict), ymean/len(coord_carbones_alphas_dict), zmean/len(coord_carbones_alphas_dict))
     return(mass_center)
 
 def accessible_surface_area(PDB_file):
@@ -62,7 +65,26 @@ def accessible_surface_area(PDB_file):
             ASA_dict[id_CA] = dssp[CA][3]
             id_CA += 1
     return ASA_dict
+
+
+def fibonacci_sphere(samples, mass_center):
+    points = []
+    phi = math.pi * (3. - math.sqrt(5.))  # golden angle in radians
+    for i in range(samples):
+        y = (1 - (i / float(samples - 1)) * 2) # y goes from 1 to -1
+        radius = math.sqrt(1 - y * y)  # radius at y
+        theta = phi * i  # golden angle increment
+        y = y + mass_center[1]
+        x = (math.cos(theta) * radius) + mass_center[0]
+        z = (math.sin(theta) * radius) + mass_center[2]
+        points.append((x, y, z))
+    return points
       
+def affichage_points(points):
+    for point in points :
+        print(points)
+        plt.figure().add_subplot(111, projection='3d').scatter(point[0], point[1], point[2]);
+    plt.show()
 
 if __name__ == "__main__":
     # Recuperation et traitement des donnees en entree.
@@ -73,3 +95,16 @@ if __name__ == "__main__":
     mass_center = calcul_centre_masse(coord_carbones_alphas_dict)
     print(mass_center)
     accessible_surface_area(PDB_file)
+    points = fibonacci_sphere(points_number, mass_center)
+    
+    x = []
+    y = []
+    z = []
+    for point in points:
+        x.append(point[0])
+        y.append(point[1])
+        z.append(point[2])
+    # Creating figure 
+    fig = plt.figure(figsize = (10, 7)) 
+    ax = plt.axes(projection ="3d") 
+    affichage_points(points)
