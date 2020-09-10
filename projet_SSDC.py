@@ -7,7 +7,7 @@ __contact__ = ("lara.herrma@gmail.com & thibault.dug@gmail.com")
 __date__ = "09 / 09 / 2020"
 
 
-hydrophobe_list = ["H","T","C","U","A","V","I","L","M","F","Y","W"]
+hydrophobe_list = ["LYS","ARG","HIS","GLU","A","V","I","L","M","F","Y","W"]
 hydrophile_list = ["P","S","N","Q","D","E","R","K"]
 
 def get_argument(arguments):
