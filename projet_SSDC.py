@@ -68,7 +68,6 @@ def accessible_surface_area(PDB_file):
 
 
 def fibonacci_sphere(samples, mass_center):
-<<<<<<< HEAD
     points = []
     phi = math.pi * (3. - math.sqrt(5.))  # golden angle in radians
     for i in range(samples):
@@ -79,31 +78,31 @@ def fibonacci_sphere(samples, mass_center):
         x = (math.cos(theta) * radius) + mass_center[0]
         z = (math.sin(theta) * radius) + mass_center[2]
         points.append((x, y, z))
-=======
-
-    points = []
-    phi = math.pi * (3. - math.sqrt(5.))  # golden angle in radians
-
-    for i in range(samples):
-        y = (1 - (i / float(samples - 1)) * 2) # y goes from 1 to -1
-        radius = math.sqrt(1 - y * y)  # radius at y
-
-        theta = phi * i  # golden angle increment
-        
-        y = y + mass_center[1]
-        x = (math.cos(theta) * radius) + mass_center[0]
-        z = (math.sin(theta) * radius) + mass_center[2]
-
-        points.append((x, y, z))
-
->>>>>>> a43c394c5449f6d7f5aab07e0590bdf7330faca1
     return points
+    
+    
+def determination_vecteur_normal(mass_center, point):
+    vect_normal = (point[0]-mass_center[0], point[1]-mass_center[1], point[2]-mass_center[2])
+    return vect_normal
       
-def affichage_points(points):
-    for point in points :
-        print(points)
-        plt.figure().add_subplot(111, projection='3d').scatter(point[0], point[1], point[2]);
-    plt.show()
+
+def determination_d(vect_normal, point):
+    # determination de l'équation cartésienne du plan : 
+    # ax + by + cz + d = 0 
+    # détermination de d à partir du vecteur 
+    d = -(vect_normal[0] * point[0] + vect_normal[1] * point[1] + vect_normal[2] * point[2])
+    return d
+
+def distance_residus_plan(vect_normal, coordonnees_CA, centre_plan):
+    d_plan_residus = determination_d(vect_normal, coordonnees_CA)
+    math.sqrt(math.abs(d_plan_reference - d_plan_residus)
+    distance = math.abs(vect_normal[0] * cordonnees_CA[0] + vect_normal[1] * cordonnees_CA[1] + vect_normal[2] * cordonnees_CA[2] + d_plan_residus) / math.sqrt(vect_normal[0] ** 2 + vect_normal[1] ** 2+ vect_normal[2] ** 2))
+    return distance <= 0.5
+    
+# boucle qui englobe tout ça et qui fait "voyager" vers chacun des vecteurs 
+# boucle pour parcourir tous les résidus et donne la distance de chaque résidus avec leplanq u'on est entrain de regarder 
+# détermination de l'hydrophobicité pour chaque plan et retourner le plan qui est le + hydrophobe 
+# boucle qui fait avancer le plan 
 
 if __name__ == "__main__":
     # Recuperation et traitement des donnees en entree.
@@ -115,32 +114,20 @@ if __name__ == "__main__":
     print(mass_center)
     accessible_surface_area(PDB_file)
     points = fibonacci_sphere(points_number, mass_center)
-<<<<<<< HEAD
-    
-    x = []
-    y = []
-    z = []
-=======
     print(mass_center)
     print(points)
     
     x = [mass_center[0]]
     y = [mass_center[1]]
     z = [mass_center[2]]
->>>>>>> a43c394c5449f6d7f5aab07e0590bdf7330faca1
     for point in points:
         x.append(point[0])
         y.append(point[1])
         z.append(point[2])
     # Creating figure 
     fig = plt.figure(figsize = (10, 7)) 
-<<<<<<< HEAD
-    ax = plt.axes(projection ="3d") 
-    affichage_points(points)
-=======
     ax = plt.axes(projection ="3d")     
     # Creating plot 
     ax.scatter3D(x, y, z, color = "green"); 
     plt.title("simple 3D scatter plot")
     plt.show()
->>>>>>> a43c394c5449f6d7f5aab07e0590bdf7330faca1
