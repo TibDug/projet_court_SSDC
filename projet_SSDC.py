@@ -17,13 +17,13 @@ hydrophobe_list = ["PHE", "GlY", "ILE", "LEU", "MET", "VAL", "TRP", "TYR"]
 hydrophile_list = ["ALA", "CYS", "ASP", "GLU", "HIS", "LYS", "ASN", "PRO", "GLN", "ARG", "SER","THR"]
 
 def get_argument(arguments):
-    if len(arguments) != 4:  # Verifie le nombre d'arguments en ligne de commande
-        sys.exit("Error: 3 parameters needed.")
+    if len(arguments) != 5:  # Verifie le nombre d'arguments en ligne de commande
+        sys.exit("Error: 4 parameters needed.")
     if os.path.exists(arguments[1]) != 1:  # Verifie la presence de l'input
         sys.exit("Error: {} does not exist.".format(arguments[1]))
     if arguments[1].split(".")[1] != "pdb":  # Verifie l'extension de l'input
         sys.exit("Error: {} is not a .pdb file.".format(arguments[1]))
-    return arguments[1], arguments[2], int(arguments[3])
+    return arguments[1], arguments[2], int(arguments[3]), float(arguments[4])
 
 def carbones_alphas_infos(PDB_file):
     coord_carbones_alphas_dict = {}
@@ -93,41 +93,68 @@ def determination_d(vect_normal, point):
     d = -(vect_normal[0] * point[0] + vect_normal[1] * point[1] + vect_normal[2] * point[2])
     return d
 
-def distance_residus_plan(vect_normal, coordonnees_CA, centre_plan):
-    d_plan_residus = determination_d(vect_normal, coordonnees_CA)
-    math.sqrt(math.abs(d_plan_reference - d_plan_residus)
-    distance = math.abs(vect_normal[0] * cordonnees_CA[0] + vect_normal[1] * cordonnees_CA[1] + vect_normal[2] * cordonnees_CA[2] + d_plan_residus) / math.sqrt(vect_normal[0] ** 2 + vect_normal[1] ** 2+ vect_normal[2] ** 2))
+def distance_residus_plan(vect_normal, coordonees_plan_ref, coordonnees_CA):
+    d_plan_reference = determination_d(vect_normal, coordonees_plan_ref)
+    distance = abs(vect_normal[0] * coordonnees_CA[0] + vect_normal[1] * coordonnees_CA[1] + vect_normal[2] * coordonnees_CA[2] + d_plan_reference) / math.sqrt(vect_normal[0] ** 2 + vect_normal[1] ** 2+ vect_normal[2] ** 2)
+    # print("La distance estde :", distance)
     return distance <= 0.5
-    
+
 # boucle qui englobe tout ça et qui fait "voyager" vers chacun des vecteurs 
 # boucle pour parcourir tous les résidus et donne la distance de chaque résidus avec leplanq u'on est entrain de regarder 
 # détermination de l'hydrophobicité pour chaque plan et retourner le plan qui est le + hydrophobe 
 # boucle qui fait avancer le plan 
 
+############# Est ce qu'on prend TOUS les CA ou seulement ceux dont dssp est élevé ? 
+############# En prenant uniquement les CA > seuil 
+def hydrophobicite_plan(ASA_dict, type_dict, seuil_ASA, vecteur_normal, coordonees_plan_ref, coord_carbones_alphas_dict): 
+    #Parcours tous les résidus, vérifie qu'ils appartiennent au plan
+    #Calcul l'hydrophobicité du plan
+    hydrophobicite = 0
+    for CA in ASA_dict:
+        if ASA_dict[CA] >= seuil_ASA:
+            # print("l'ASA est de :", ASA_dict[CA])
+            if distance_residus_plan(vecteur_normal, coordonees_plan_ref, coord_carbones_alphas_dict[CA]):
+                print("Coordonnees du residus sur le plan : ",coord_carbones_alphas_dict[CA])
+                hydrophobicite += type_dict[CA]
+                ############# Est ce qu'on vérifirai pas l'hydrophobicite ici au lieu 
+                ############# de tout stocker dans un dico ??? 
+    return hydrophobicite
+
+def parcours_vecteurs(points, mass_center, coord_carbones_alphas_dict, ASA_dict, type_dict, seuil_ASA):
+    hydrophobicite_max = 0
+    coordonnees_membrane = []
+    for point in points:
+        print("Coordonnees du point du vecteur: ", point)
+        print("Coordonnees du centre de masse: ", mass_center)
+        vecteur_normal = determination_vecteur_normal(mass_center, point)
+        hydrophobicite = hydrophobicite_plan(ASA_dict, type_dict, seuil_ASA, vecteur_normal, mass_center, coord_carbones_alphas_dict)
+        if hydrophobicite > hydrophobicite_max :
+            hydrophobicite_max = max(hydrophobicite_max, hydrophobicite)
+            coordonnees_membrane = list(point)
+    return hydrophobicite_max, coordonnees_membrane
+
+
 if __name__ == "__main__":
     # Recuperation et traitement des donnees en entree.
     # Recuperation des arguments en entree.
-    PDB_file, output_file, points_number = get_argument(sys.argv)
+    PDB_file, output_file, points_number, seuil_ASA = get_argument(sys.argv)
     coord_carbones_alphas_dict, type_dict = carbones_alphas_infos(PDB_file)
-    print(type_dict.values())
     mass_center = calcul_centre_masse(coord_carbones_alphas_dict)
-    print(mass_center)
-    accessible_surface_area(PDB_file)
+    ASA_dict = accessible_surface_area(PDB_file)
     points = fibonacci_sphere(points_number, mass_center)
-    print(mass_center)
-    print(points)
-    
-    x = [mass_center[0]]
-    y = [mass_center[1]]
-    z = [mass_center[2]]
-    for point in points:
-        x.append(point[0])
-        y.append(point[1])
-        z.append(point[2])
-    # Creating figure 
-    fig = plt.figure(figsize = (10, 7)) 
-    ax = plt.axes(projection ="3d")     
-    # Creating plot 
-    ax.scatter3D(x, y, z, color = "green"); 
-    plt.title("simple 3D scatter plot")
-    plt.show()
+    hydrophobicite_max, coordonnees_membrane = parcours_vecteurs(points, mass_center, coord_carbones_alphas_dict, ASA_dict, type_dict, seuil_ASA)
+    print(hydrophobicite_max, coordonnees_membrane)
+    # x = [mass_center[0]]
+    # y = [mass_center[1]]
+    # z = [mass_center[2]]
+    # for point in points:
+    #     x.append(point[0])
+    #     y.append(point[1])
+    #     z.append(point[2])
+    # # Creating figure 
+    # fig = plt.figure(figsize = (10, 7)) 
+    # ax = plt.axes(projection ="3d")     
+    # # Creating plot 
+    # ax.scatter3D(x, y, z, color = "green"); 
+    # plt.title("simple 3D scatter plot")
+    # plt.show()
