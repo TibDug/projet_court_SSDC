@@ -186,7 +186,7 @@ def conversion_ID_PDB(liste_CA_membrane_max_proteine, dict_conversion_ID):
     
 def PDB_membrane(PDB_file, liste_CA_membrane_max_proteine_PDB):
     string_CA_membrane_max_proteine_PDB = "+".join(liste_CA_membrane_max_proteine_PDB)
-    print("selection Pymol : " + string_CA_membrane_max_proteine_PDB)
+    #print("selection Pymol : " + string_CA_membrane_max_proteine_PDB)
     try:        
         cmd.reinitialize()
         cmd.load(PDB_file)
