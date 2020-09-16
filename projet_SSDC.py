@@ -113,41 +113,45 @@ def calcul_hydrophobicite_plan(ASA_dict, type_dict, seuil_ASA, vecteur_normal, c
     #Parcours tous les résidus, vérifie qu'ils appartiennent au plan
     #Calcul l'hydrophobicité du plan
     hydrophobicite = 0
-    liste_CA = []
+    liste_CA_exposes = []
+    liste_CA_membrane = []
     for CA in ASA_dict:
-        if ASA_dict[CA] >= seuil_ASA:
+        if distance_residus_plan(vecteur_normal, coordonees_plan_ref, coord_carbones_alphas_dict[CA], epaisseur_membrane):
             # print("l'ASA est de :", ASA_dict[CA])
-            if distance_residus_plan(vecteur_normal, coordonees_plan_ref, coord_carbones_alphas_dict[CA], epaisseur_membrane):
+            liste_CA_membrane.append(CA)
+            if ASA_dict[CA] >= seuil_ASA:
                 #print("Coordonnees du residus sur le plan : ",coord_carbones_alphas_dict[CA])
                 hydrophobicite += type_dict[CA]
-                liste_CA.append(CA)
+                liste_CA_exposes.append(CA)
                 ############# Est ce qu'on vérifirai pas l'hydrophobicite ici au lieu 
                 ############# de tout stocker dans un dico ??? 
-    return hydrophobicite, liste_CA
+    return hydrophobicite, liste_CA_exposes, liste_CA_membrane
 
 def parcours_plans(ASA_dict, type_dict, seuil_ASA, vecteur_normal, mass_center, coord_carbones_alphas_dict, distance_max_center, epaisseur_membrane):
     coordonees_plan_ref = mass_center
     hydrophobicite_max_vecteur = 0
     while(True): 
         #print("changement de plan")
-        hydrophobicite_plan, liste_CA = calcul_hydrophobicite_plan(ASA_dict, type_dict, seuil_ASA, vecteur_normal, coordonees_plan_ref, coord_carbones_alphas_dict, epaisseur_membrane)
+        hydrophobicite_plan, liste_CA_exposes, liste_CA_membrane = calcul_hydrophobicite_plan(ASA_dict, type_dict, seuil_ASA, vecteur_normal, coordonees_plan_ref, coord_carbones_alphas_dict, epaisseur_membrane)
         if hydrophobicite_plan > hydrophobicite_max_vecteur:
             hydrophobicite_max_vecteur = hydrophobicite_plan
-            liste_CA_max_vecteur = liste_CA
+            liste_CA_exposes_max_vecteur = liste_CA_exposes
+            liste_CA_membrane_max_vecteur = liste_CA_membrane
         coordonees_plan_ref = (coordonees_plan_ref[0] + vecteur_normal[0], coordonees_plan_ref[1] + vecteur_normal[1], coordonees_plan_ref[2] + vecteur_normal[2])
         if calcul_distance(coordonees_plan_ref, mass_center) > distance_max_center:
             break
     coordonees_plan_ref = mass_center
     while(True): 
         #print("changement de plan")
-        hydrophobicite_plan, liste_CA = calcul_hydrophobicite_plan(ASA_dict, type_dict, seuil_ASA, vecteur_normal, coordonees_plan_ref, coord_carbones_alphas_dict, epaisseur_membrane)
+        hydrophobicite_plan, liste_CA_exposes, liste_CA_membrane = calcul_hydrophobicite_plan(ASA_dict, type_dict, seuil_ASA, vecteur_normal, coordonees_plan_ref, coord_carbones_alphas_dict, epaisseur_membrane)
         if hydrophobicite_plan > hydrophobicite_max_vecteur:
             hydrophobicite_max_vecteur = hydrophobicite_plan
-            liste_CA_max_vecteur = liste_CA
+            liste_CA_exposes_max_vecteur = liste_CA_exposes
+            liste_CA_membrane_max_vecteur = liste_CA_membrane
         coordonees_plan_ref = (coordonees_plan_ref[0] - 0.5 * vecteur_normal[0], coordonees_plan_ref[1] - 0.5 * vecteur_normal[1], coordonees_plan_ref[2] - 0.5 * vecteur_normal[2])
         if calcul_distance(coordonees_plan_ref, mass_center) > distance_max_center:
             break
-    return hydrophobicite_max_vecteur, liste_CA_max_vecteur
+    return hydrophobicite_max_vecteur, liste_CA_exposes_max_vecteur, liste_CA_membrane_max_vecteur
 
 def parcours_vecteurs(points, mass_center, coord_carbones_alphas_dict, ASA_dict, type_dict, seuil_ASA, distance_max_center, epaisseur_membrane):
     hydrophobicite_max_proteine = 0
@@ -156,11 +160,12 @@ def parcours_vecteurs(points, mass_center, coord_carbones_alphas_dict, ASA_dict,
         # print("Coordonnees du point du vecteur: ", point)
         # print("Coordonnees du centre de masse: ", mass_center)
         vecteur_normal = determination_vecteur_normal(mass_center, point)
-        hydrophobicite_max_vecteur, liste_CA_max_vecteur = parcours_plans(ASA_dict, type_dict, seuil_ASA, vecteur_normal, mass_center, coord_carbones_alphas_dict, distance_max_center, epaisseur_membrane)
+        hydrophobicite_max_vecteur, liste_CA_exposes_max_vecteur, liste_CA_membrane_max_vecteur = parcours_plans(ASA_dict, type_dict, seuil_ASA, vecteur_normal, mass_center, coord_carbones_alphas_dict, distance_max_center, epaisseur_membrane)
         if hydrophobicite_max_vecteur > hydrophobicite_max_proteine :
             hydrophobicite_max_proteine = hydrophobicite_max_vecteur
-            liste_CA_max_proteine = liste_CA_max_vecteur
-    return hydrophobicite_max_proteine, liste_CA_max_proteine
+            liste_CA_exposes_max_proteine = liste_CA_exposes_max_vecteur
+            liste_CA_membrane_max_proteine = liste_CA_membrane_max_vecteur
+    return hydrophobicite_max_proteine, liste_CA_exposes_max_proteine, liste_CA_membrane_max_proteine
 
 def calcul_distance(coords1, coords2):
     return math.sqrt((coords1[0]-coords2[0])**2 + (coords1[1]-coords2[1])**2 + (coords1[2]-coords2[2])**2)
@@ -173,17 +178,17 @@ def distance_max_center(coord_carbones_alphas_dict, mass_center):
             distance_max = distance
     return distance_max
     
-def PDB_membrane(PDB_file, liste_CA_max_proteine, dict_conversion_ID):
-    liste_CA_max_proteine_PDB = []
-    for id_CA in liste_CA_max_proteine:
+def PDB_membrane(PDB_file, liste_CA_membrane_max_proteine, dict_conversion_ID):
+    liste_CA_membrane_max_proteine_PDB = []
+    for id_CA in liste_CA_membrane_max_proteine:
         print("nouvelle itération")
         print(dict_conversion_ID)
         print(id_CA)
         print(dict_conversion_ID[id_CA])
-        liste_CA_max_proteine_PDB.append(dict_conversion_ID[id_CA])
-    print(liste_CA_max_proteine_PDB)
-    string_CA_max_proteine_PDB = "+".join(liste_CA_max_proteine_PDB)
-    
+        liste_CA_membrane_max_proteine_PDB.append(dict_conversion_ID[id_CA])
+    print(liste_CA_membrane_max_proteine_PDB)
+    string_CA_membrane_max_proteine_PDB = "+".join(liste_CA_membrane_max_proteine_PDB)
+    print(string_CA_membrane_max_proteine_PDB)
     try:        
         cmd.reinitialize()
         cmd.load(PDB_file)
@@ -192,10 +197,11 @@ def PDB_membrane(PDB_file, liste_CA_max_proteine, dict_conversion_ID):
         print("Erreur de chargement du ficher " +  PDB_file)
     cmd.select("proteine", "all")
     cmd.show_as("sticks","proteine")
-    cmd.spectrum("b", "proteine")
-    cmd.select("membrane", "resi {}". format(string_CA_max_proteine_PDB))
-    cmd.spectrum("r", "membrane")
-    cmd.save("membrane_" + PDB_file, "proteine")
+    cmd.color("white", "proteine")
+    cmd.select("membrane", "resi {}". format(string_CA_membrane_max_proteine_PDB))
+    cmd.color("red", "membrane")
+    #cmd.save("membrane_" + PDB_file, "proteine")
+    cmd.png('membrane.png', 1080, 1920)
         
 
 
@@ -224,9 +230,9 @@ if __name__ == "__main__":
     distance_max_center = distance_max_center(coord_carbones_alphas_dict, mass_center)
     ASA_dict = accessible_surface_area(PDB_file)
     points = fibonacci_sphere(points_number, mass_center)
-    hydrophobicite_max, liste_CA_max_proteine = parcours_vecteurs(points, mass_center, coord_carbones_alphas_dict, ASA_dict, type_dict, seuil_ASA, distance_max_center, epaisseur_membrane)
-    print(hydrophobicite_max, liste_CA_max_proteine)
-    PDB_membrane(PDB_file, liste_CA_max_proteine, dict_conversion_ID)
+    hydrophobicite_max, liste_CA_exposes_max_proteine, liste_CA_membrane_max_proteine = parcours_vecteurs(points, mass_center, coord_carbones_alphas_dict, ASA_dict, type_dict, seuil_ASA, distance_max_center, epaisseur_membrane)
+    print(hydrophobicite_max, liste_CA_membrane_max_proteine)
+    PDB_membrane(PDB_file, liste_CA_membrane_max_proteine, dict_conversion_ID)
     # x = [mass_center[0]]
     # y = [mass_center[1]]
     # z = [mass_center[2]]
