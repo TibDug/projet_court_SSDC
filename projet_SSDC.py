@@ -39,7 +39,7 @@ def carbones_alphas_infos(PDB_file):
                 if ligne[17:20].strip() in hydrophobe_list:
                     type_dict[id_CA] = 1
                 elif ligne[17:20].strip() in hydrophile_list:
-                    type_dict[id_CA] = 0
+                    type_dict[id_CA] = -1
                 else:
                     type_dict[id_CA] = 0
                 id_CA += 1
@@ -129,7 +129,7 @@ def calcul_hydrophobicite_plan(ASA_dict, type_dict, seuil_ASA, vecteur_normal, c
 
 def parcours_plans(ASA_dict, type_dict, seuil_ASA, vecteur_normal, mass_center, coord_carbones_alphas_dict, distance_max_center, epaisseur_membrane):
     coordonees_plan_ref = mass_center
-    hydrophobicite_max_vecteur = 0
+    hydrophobicite_max_vecteur = -1000
     while(True): 
         #print("changement de plan")
         hydrophobicite_plan, liste_CA_exposes, liste_CA_membrane = calcul_hydrophobicite_plan(ASA_dict, type_dict, seuil_ASA, vecteur_normal, coordonees_plan_ref, coord_carbones_alphas_dict, epaisseur_membrane)
@@ -178,32 +178,50 @@ def distance_max_center(coord_carbones_alphas_dict, mass_center):
             distance_max = distance
     return distance_max
     
-def PDB_membrane(PDB_file, liste_CA_membrane_max_proteine, dict_conversion_ID):
+def conversion_ID_PDB(liste_CA_membrane_max_proteine, dict_conversion_ID):
     liste_CA_membrane_max_proteine_PDB = []
     for id_CA in liste_CA_membrane_max_proteine:
-        print("nouvelle itération")
-        print(dict_conversion_ID)
-        print(id_CA)
-        print(dict_conversion_ID[id_CA])
         liste_CA_membrane_max_proteine_PDB.append(dict_conversion_ID[id_CA])
-    print(liste_CA_membrane_max_proteine_PDB)
+    return liste_CA_membrane_max_proteine_PDB
+    
+def PDB_membrane(PDB_file, liste_CA_membrane_max_proteine_PDB):
     string_CA_membrane_max_proteine_PDB = "+".join(liste_CA_membrane_max_proteine_PDB)
-    print(string_CA_membrane_max_proteine_PDB)
+    print("selection Pymol : " + string_CA_membrane_max_proteine_PDB)
     try:        
         cmd.reinitialize()
         cmd.load(PDB_file)
-        print("Chargement du ficher " +  PDB_file + " effectue")
+        # print("Chargement du ficher " +  PDB_file + " effectue")
     except:
         print("Erreur de chargement du ficher " +  PDB_file)
+    cmd.set("transparency", "0")
     cmd.select("proteine", "all")
     cmd.show_as("sticks","proteine")
-    cmd.color("white", "proteine")
+    cmd.color("actinium", "proteine")
     cmd.select("membrane", "resi {}". format(string_CA_membrane_max_proteine_PDB))
-    cmd.color("red", "membrane")
-    #cmd.save("membrane_" + PDB_file, "proteine")
-    cmd.png('membrane.png', 1080, 1920)
+    cmd.color("firebrick", "membrane")
+    cmd.png('membrane_' + PDB_file.split('.')[0] + '.png', width = 1920, height = 1080, dpi = 300)
         
+def segmentation_resultats(liste_CA_membrane_max_proteine_PDB):
+    i = 1
+    dico_liste_segments = {}
+    liste_segment = [int(liste_CA_membrane_max_proteine_PDB[0])]
+    for id_CA in liste_CA_membrane_max_proteine_PDB[1:] :    
+        id_CA = int(id_CA)    
+        if id_CA == liste_segment[-1] + 1 :
+            liste_segment.append(id_CA)
+        else :
+            dico_liste_segments[i] = liste_segment
+            liste_segment = [id_CA]
+            i += 1
+    return dico_liste_segments
 
+def ecriture_resultats(output_file, dico_liste_segments):
+    with open(output_file, "w") as filout:
+        for numero in sorted(dico_liste_segments):
+            if dico_liste_segments[numero][0] == dico_liste_segments[numero][-1]:
+                filout.write("{}({})\n".format(numero, dico_liste_segments[numero][0]))
+            else : 
+                filout.write("{}({}-{})\n".format(numero, dico_liste_segments[numero][0], dico_liste_segments[numero][-1]))
 
 if __name__ == "__main__":
     # Recuperation et traitement des donnees en entree.
@@ -231,9 +249,13 @@ if __name__ == "__main__":
     ASA_dict = accessible_surface_area(PDB_file)
     points = fibonacci_sphere(points_number, mass_center)
     hydrophobicite_max, liste_CA_exposes_max_proteine, liste_CA_membrane_max_proteine = parcours_vecteurs(points, mass_center, coord_carbones_alphas_dict, ASA_dict, type_dict, seuil_ASA, distance_max_center, epaisseur_membrane)
-    print(hydrophobicite_max, liste_CA_membrane_max_proteine)
-    PDB_membrane(PDB_file, liste_CA_membrane_max_proteine, dict_conversion_ID)
-    # x = [mass_center[0]]
+    # print(hydrophobicite_max, liste_CA_membrane_max_proteine)
+    
+    liste_CA_membrane_max_proteine_PDB = conversion_ID_PDB(liste_CA_membrane_max_proteine, dict_conversion_ID)
+    PDB_membrane(PDB_file, liste_CA_membrane_max_proteine_PDB)
+    dico_liste_segments = segmentation_resultats(liste_CA_membrane_max_proteine_PDB)
+    ecriture_resultats(output_file, dico_liste_segments)   
+     # x = [mass_center[0]]
     # y = [mass_center[1]]
     # z = [mass_center[2]]
     # for point in points:
